@@ -3,11 +3,49 @@ pipeline {
     tools {
         maven 'maven3'
     }
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
+        string(name: 'SERVER_IP', defaultValue: '13.234.116.148', description: 'Server IP')
+        string(name: 'S3_BUCKET', defaultValue: 'vprofile-', description: 'S3 bucket')
+    }
     environment {
         version = ''
-        deployEnv = ''
     }
     stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    if (params.DEPLOY_ENV == 'QA') {
+                        checkout(
+                            [$class: 'GitSCM',
+                            branches: [[name: '*/develop']],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[
+                                credentialsId: 'github-vprofile-credentials',
+                                url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
+                            ]]
+                            ]
+                        )
+                    } else { 
+                        // For Stage and Prod, switch to master branch
+                        checkout(
+                            [$class: 'GitSCM',
+                            branches: [[name: '*/master']],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[
+                                credentialsId: 'github-vprofile-credentials',
+                                url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
+                            ]]
+                            ]
+                        )
+                    }
+                }
+            }
+        }
         stage('Read POM') {
             steps {
                 script {
@@ -31,44 +69,19 @@ pipeline {
                 }
             }
         }
-        stage("Choose Deployment Environment") {
-            steps {
-                script {
-                    deployEnv = input(
-                        message: 'Select deployment environment:',
-                        parameters: [
-                            choice(choices: ['qa', 'stage', 'prod'], description: 'Choose the deployment environment')
-                        ]
-                    )
-                    echo "Deployment environment selected: ${deployEnv}"
-                }
-            }
-        }
         stage("Upload Artifact s3") {
             steps {
                 script {
-                    sh "aws s3 cp target/vprofile-${version}.war s3://automation999/vprofile-artifact/vprofile-${version}.war"
+                    sh "aws s3 cp target/vprofile-${version}.war s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war"
                 }
             }
         }
         stage('Deploy') {
-            when {
-                expression { deployEnv != '' }
-            }
             steps {
-                script {
-                    sshagent(credentials: ['EC2-creds']) {
-                        if (deployEnv == 'qa') {
-                            sh "ssh -o StrictHostKeyChecking=no ubuntu@qa-server-ip 'sudo mv ~/vprofile-${version}.war /var/lib/tomcat9/webapps/'"
-                            sh "ssh -o StrictHostKeyChecking=no ubuntu@qa-server-ip 'sudo systemctl restart tomcat9'"
-                        } else if (deployEnv == 'stage') {
-                            sh "ssh -o StrictHostKeyChecking=no ubuntu@stage-server-ip 'sudo mv ~/vprofile-${version}.war /var/lib/tomcat9/webapps/'"
-                            sh "ssh -o StrictHostKeyChecking=no ubuntu@stage-server-ip 'sudo systemctl restart tomcat9'"
-                        } else if (deployEnv == 'prod') {
-                            sh "ssh -o StrictHostKeyChecking=no ubuntu@prod-server-ip 'sudo mv ~/vprofile-${version}.war /var/lib/tomcat9/webapps/'"
-                            sh "ssh -o StrictHostKeyChecking=no ubuntu@prod-server-ip 'sudo systemctl restart tomcat9'"
-                        }
-                    }
+                sshagent(credentials: ['EC2-creds']) {
+                   sh  "ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP}  'aws s3 cp s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war ~/'"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'sudo mv ~/vprofile-${version}-${DEPLOY_ENV}.war /var/lib/tomcat9/webapps/'"
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'sudo systemctl restart tomcat9'"
                 }
             }
         }
