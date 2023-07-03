@@ -87,7 +87,7 @@ pipeline {
                 deploymentGroup = 'Vprofile-App-stage'
                 break
                 case 'Prod':
-                deploymentGroup = 'Vprofile-App-production'
+                deploymentGroup = 'vprofile-deploy-group'
                 break
                 default:
                 error('Invalid environment selected')
