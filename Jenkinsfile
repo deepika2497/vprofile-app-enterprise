@@ -108,13 +108,13 @@ pipeline {
                 deploymentGroup = 'Vprofile-App-stage'
                 break
                 case 'Prod':
-                deploymentGroup = 'vprofile-deploy-group'
+                deploymentGroup = 'prod-deployment-group'
                 break
                 default:
                 error('Invalid environment selected')
             }
 
-            sh "aws deploy create-deployment --application-name  vprofile-deploy-application --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile.bundle,key=deploy-bundle.zip,bundleType=zip"
+            sh "aws deploy create-deployment --application-name  vprofile-new-app --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile.bundle,key=deploy-bundle.zip,bundleType=zip"
             }
         }
     }
