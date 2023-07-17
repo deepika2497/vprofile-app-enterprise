@@ -77,7 +77,7 @@ pipeline {
             // }
             steps {
                 script {
-                    dir('terraform-git') {
+                    dir('terraform-scripts') {
                         sh "terraform init"
                         sh "terraform apply --auto-approve"
                         // EC2_PUBLIC_IP = sh(
