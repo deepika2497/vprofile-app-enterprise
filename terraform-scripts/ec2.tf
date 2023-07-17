@@ -9,8 +9,4 @@ resource "aws_instance" "vprofileapp_instance" {
   tags = {
     Name = "VprofileApp_Prod"
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> b3f2237abed8c5f666dae05944f66067bd167568
