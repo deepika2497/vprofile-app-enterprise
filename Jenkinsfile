@@ -5,7 +5,6 @@ pipeline {
     }
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
-        string(name: 'SERVER_IP', defaultValue: '13.234.116.148', description: 'Server IP')
         string(name: 'S3_BUCKET', defaultValue: 'vprofile.', description: 'S3 bucket')
     }
     environment {
