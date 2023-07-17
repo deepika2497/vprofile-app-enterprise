@@ -5,7 +5,6 @@ pipeline {
     }
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
-        string(name: 'SERVER_IP', defaultValue: '13.234.116.148', description: 'Server IP')
         string(name: 'S3_BUCKET', defaultValue: 'vprofile.', description: 'S3 bucket')
     }
     environment {
@@ -78,7 +77,7 @@ pipeline {
             // }
             steps {
                 script {
-                    dir('terraform-git') {
+                    dir('terraform-scripts') {
                         sh "terraform init"
                         sh "terraform apply --auto-approve"
                         // EC2_PUBLIC_IP = sh(
@@ -97,14 +96,27 @@ pipeline {
                 }
             }
         }
-        stage('Deploy') {
-            steps {
-                sshagent(credentials: ['devops-sample']) {
-                   sh  "ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP}  'aws s3 cp s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war ~/'"
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'sudo mv ~/vprofile-${version}-${DEPLOY_ENV}.war /var/lib/tomcat9/webapps/'"
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} 'sudo systemctl restart tomcat9'"
-                }
+        stage('Deploy to CodeDeploy') {
+        steps {
+            script {
+            def deploymentGroup
+            switch (params.DEPLOY_ENV) {
+                case 'QA':
+                deploymentGroup = 'Vprofile-App-qa'
+                break
+                case 'Stage':
+                deploymentGroup = 'Vprofile-App-stage'
+                break
+                case 'Prod':
+                deploymentGroup = 'prod-deployment-group'
+                break
+                default:
+                error('Invalid environment selected')
+            }
+
+            sh "aws deploy create-deployment --application-name  vprofile-new-app --deployment-group-name ${deploymentGroup} --s3-location bucket=deepikanagu-bucket,key=deploy-bundle.zip,bundleType=zip"
             }
         }
     }
+   }
 }
