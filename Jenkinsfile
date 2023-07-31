@@ -99,13 +99,13 @@ pipeline {
 
          stage('Copy') {
             steps {
-                sh 'cp target/*.war Docker/'
+                sh 'cp target/*.war Docker/app/'
             }
         }
         stage('Dockerize') {
     steps {
         script {
-            dir('Docker') {
+            dir('Docker/app') {
                 dir('Docker') {
                         sh "docker build -t 851481789693.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version} . "
                         sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 851481789693.dkr.ecr.ap-south-1.amazonaws.com'
