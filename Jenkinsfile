@@ -144,7 +144,7 @@ stage('Create Deploy Bundle') {
                 error('Invalid environment selected')
             }
 
-            sh "aws deploy create-deployment --application-name  vprofileapp-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile.bundle,key=deploy-bundle.zip,bundleType=zip"
+            sh "aws deploy create-deployment --application-name  vprofile-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile.bundle,key=deploy-bundle.zip,bundleType=zip"
             }
         }
     }
