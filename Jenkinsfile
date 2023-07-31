@@ -114,28 +114,40 @@ pipeline {
     }
 }
 
-    //     stage('Deploy to CodeDeploy') {
-    //     steps {
-    //         script {
-    //         def deploymentGroup
-    //         switch (params.DEPLOY_ENV) {
-    //             case 'QA':
-    //             deploymentGroup = 'Vprofile-App-qa'
-    //             break
-    //             case 'Stage':
-    //             deploymentGroup = 'Vprofile-App-stage'
-    //             break
-    //             case 'Prod':
-    //             deploymentGroup = 'prod-deployment-group'
-    //             break
-    //             default:
-    //             error('Invalid environment selected')
-    //         }
+stage('Create Deploy Bundle') {
+            steps {
+                script {
+                    dir('deploy-bundle') {
+                        sh "sed -i s/%version%/${version}/g ./*"
+                        sh 'zip -r ../deploy-bundle.zip ./*'
+                        sh "aws s3 cp ../deploy-bundle.zip s3://vprofile.bundle/deploy-bundle-${version}.zip"
+                    }
+                }
+            }
+        }
 
-    //         sh "aws deploy create-deployment --application-name  vprofile-new-app --deployment-group-name ${deploymentGroup} --s3-location bucket=deepikanagu-bucket,key=deploy-bundle.zip,bundleType=zip"
-    //         }
-    //     }
-    // }
+        stage('Deploy to CodeDeploy') {
+        steps {
+            script {
+            def deploymentGroup
+            switch (params.DEPLOY_ENV) {
+                case 'QA':
+                deploymentGroup = 'vprofile-docker'
+                break
+                case 'Stage':
+                deploymentGroup = 'Vprofile-App-stage'
+                break
+                case 'Prod':
+                deploymentGroup = 'prod-deployment-group'
+                break
+                default:
+                error('Invalid environment selected')
+            }
+
+            sh "aws deploy create-deployment --application-name  vprofileapp-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile.bundle,key=deploy-bundle.zip,bundleType=zip"
+            }
+        }
+    }
 
 }
 }
