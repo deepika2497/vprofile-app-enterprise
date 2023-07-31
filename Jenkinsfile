@@ -17,7 +17,7 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/develop']],
+                            branches: [[name: '*/master']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
@@ -31,7 +31,7 @@ pipeline {
                         // For Stage and Prod, switch to master branch
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/terraform-git']],
+                            branches: [[name: '*/master']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
@@ -99,14 +99,13 @@ pipeline {
 
          stage('Copy') {
             steps {
-                sh 'cp target/*.war Docker/app/'
+                sh 'cp target/*.war Docker/app'
             }
         }
         stage('Dockerize') {
     steps {
         script {
             dir('Docker/app') {
-                dir('Docker') {
                         sh "docker build -t 851481789693.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version} . "
                         sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 851481789693.dkr.ecr.ap-south-1.amazonaws.com'
                         sh "docker push 851481789693.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version}"
@@ -137,6 +136,6 @@ pipeline {
     //         }
     //     }
     // }
-   }
+
 }
 }
