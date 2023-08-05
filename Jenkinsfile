@@ -5,19 +5,18 @@ pipeline {
     }
     stages {
         stage("Build Artifact") {
-        steps {
-            script {
-                 sh 'mvn clean package -DskipTests'
+            steps {
+                script {
+                    sh 'mvn clean package -DskipTests'
+                }
             }
         }
-        }
-       
-    }
-    stage("Test") {
+        stage("Test") {
             steps {
                 script {
                     sh 'mvn test'
                 }
             }
         }
+    }
 }
