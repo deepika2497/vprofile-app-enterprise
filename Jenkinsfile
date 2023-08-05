@@ -19,10 +19,10 @@ pipeline {
             }
         }
 
-    stage("upload artifact s3") {
+    stage("Upload Artifact s3") {
             steps {
                 script {
-                    sh "aws s3 cp target/vprofile-1.0.3.war s3://automation-practice/"
+                    sh "aws s3 cp target/vprofile-${version}.war s3://automation-practice/vprofile/"
                 }
             }
         }
