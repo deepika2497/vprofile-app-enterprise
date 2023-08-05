@@ -30,9 +30,9 @@ pipeline {
     steps {
         sshagent(credentials: ['ec2-creds']) {
             sh """
-                scp -o StrictHostKeyChecking=no target/vprofile-1.0.3.war ubuntu@43.204.236.158:~/
-                ssh -o StrictHostKeyChecking=no ubuntu@43.204.236.158 'sudo mv ~/vprofile-1.0.3.war /var/lib/tomcat9/webapps/'
-                ssh -o StrictHostKeyChecking=no ubuntu@43.204.236.158 'sudo systemctl restart tomcat9'
+                scp -o StrictHostKeyChecking=no target/vprofile-1.0.3.war ubuntu@13.233.144.29:~/
+                ssh -o StrictHostKeyChecking=no ubuntu@13.233.144.29 'sudo mv ~/vprofile-1.0.3.war /var/lib/tomcat9/webapps/'
+                ssh -o StrictHostKeyChecking=no ubuntu@13.233.144.29 'sudo systemctl restart tomcat9'
             """
         }
     }
