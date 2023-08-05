@@ -18,6 +18,14 @@ pipeline {
                 }
             }
         }
+
+    stage("upload artifact s3") {
+            steps {
+                script {
+                    sh "aws s3 cp target/vprofile-1.0.3.war s3://automation-practice/"
+                }
+            }
+        }
         stage('Deploy') {
     steps {
         sshagent(credentials: ['ec2-creds']) {
