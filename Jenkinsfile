@@ -4,7 +4,8 @@ pipeline {
         maven 'maven3'
     }
     parameters {
-        choice(name: 'SERVER', choices: ['QA (13.232.15.25)', 'Stage (13.232.16.28)', 'Production (13.232.17.31)'], description: 'Select the target server for deployment')
+        choice(name: 'SERVER', choices: ['QA', 'Stage', 'Production'], description: 'Select the target server for deployment')
+        choice(name: 'IP_ADDRESS', choices: ['13.232.15.25', '13.232.16.28', '13.232.17.31'], description: 'Select the IP address for the selected server')
     }
     stages {
         stage("Build Artifact") {
@@ -39,19 +40,12 @@ pipeline {
                 }
             }
         }
-         stage('Deploy') {
+        stage('Deploy') {
             steps {
                 script {
-                    def serverChoice = params.SERVER.split(' ')[1] // Extract the selected server IP from the choice
-                    if (serverChoice == '13.232.15.25') {
-                        deployToServer('QA', '13.232.15.25')
-                    } else if (serverChoice == '13.232.16.28') {
-                        deployToServer('Stage', '13.232.16.28')
-                    } else if (serverChoice == '13.232.17.31') {
-                        deployToServer('Production', '13.232.17.31')
-                    } else {
-                        echo "Invalid server selection."
-                    }
+                    def selectedServer = params.SERVER
+                    def selectedIP = params.IP_ADDRESS
+                    deployToServer(selectedServer, selectedIP)
                 }
             }
         }
