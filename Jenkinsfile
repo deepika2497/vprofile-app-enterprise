@@ -5,7 +5,7 @@ pipeline {
     }
     parameters {
         choice(name: 'SERVER', choices: ['QA', 'Stage', 'Production'], description: 'Select the target server for deployment')
-        choice(name: 'IP_ADDRESS', choices: ['13.232.15.25', '13.232.16.28', '13.232.17.31'], description: 'Select the IP address for the selected server')
+        text(name: 'IP_ADDRESS', defaultValue: '', description: 'Enter the IP address for the selected server')
     }
     stages {
         stage("Build Artifact") {
