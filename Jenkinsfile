@@ -41,6 +41,7 @@ pipeline {
                 sshagent(credentials: ['ec2-creds']) {
                     script {
                         sh """
+                            aws s3 cp s3://automation-practice/vprofile/vprofile-${latestVersion}.war target/
                             scp -o StrictHostKeyChecking=no target/vprofile-${env.VERSION}.war ubuntu@13.232.15.25:~/
                             ssh -o StrictHostKeyChecking=no ubuntu@13.232.15.25 'sudo mv ~/vprofile-${env.VERSION}.war /var/lib/tomcat9/webapps/'
                             ssh -o StrictHostKeyChecking=no ubuntu@13.232.15.25 'sudo systemctl restart tomcat9'
