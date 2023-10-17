@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
     tools {
@@ -8,6 +7,7 @@ pipeline {
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
         string(name: 'S3_BUCKET', defaultValue: 'vprofile', description: 'S3 bucket')
+        string(name: 'EC2_IP', defaultValue: '13.49.246.7', description: 'EC2 Instance IP Address')
     }
 
     environment {
@@ -84,8 +84,8 @@ pipeline {
         steps {
             sshagent(credentials: ['ec2-creds']) {
                 
-                sh "ssh ubuntu@3.110.159.232 'sudo mv ~/vprofile-v1.war /var/lib/tomcat9/webapps/'"
-                sh "ssh ubuntu@3.110.159.232 'sudo systemctl restart tomcat9'"
+                sh "ssh ubuntu@${params.EC2_IP} 'sudo mv ~/vprofile-v1.war /var/lib/tomcat9/webapps/'"
+                sh "ssh ubuntu@${params.EC2_IP} 'sudo systemctl restart tomcat9'"
             }
         }
     }
