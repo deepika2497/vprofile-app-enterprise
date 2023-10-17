@@ -80,14 +80,15 @@ pipeline {
             }
         }
 
-       stage('Deploy') {
+      stage('Deploy') {
     steps {
         sshagent(credentials: ['ec2-creds']) {
-	    sh "aws s3 cp s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war ~/"
+            sh "aws s3 cp s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war ~/vprofile-${version}-${DEPLOY_ENV}.war"
             sh "ssh -o StrictHostKeyChecking=no ubuntu@13.49.246.7 'sudo mv ~/vprofile-${version}-${DEPLOY_ENV}.war /var/lib/tomcat9/webapps/'"
             sh "ssh -o StrictHostKeyChecking=no ubuntu@13.49.246.7 'sudo systemctl restart tomcat9'"
         }
     }
 }
+
    }
 }
