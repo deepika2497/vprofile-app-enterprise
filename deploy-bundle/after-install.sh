@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-S3_BUCKET="vprofile.prod"
+S3_BUCKET="vprofileqa"
 ARTIFACT_PREFIX="vprofile-"
 WEBAPPS_DIR="/var/lib/tomcat9/webapps/"
 
@@ -19,3 +19,4 @@ if [ -n "$LATEST_VERSION" ]; then
 else
     echo "No artifact found in the S3 bucket."
 fi
+
