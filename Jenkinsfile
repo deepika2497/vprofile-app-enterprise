@@ -3,13 +3,17 @@ pipeline {
     tools {
         maven 'maven3'
     }
+
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
-        string(name: 'S3_BUCKET', defaultValue: 'vprofile.', description: 'S3 bucket')
+        string(name: 'S3_BUCKET', defaultValue: 'vprofile', description: 'S3 bucket')
+        string(name: 'EC2_IP', defaultValue: '3.110.159.232', description: 'EC2 Instance IP Address')
     }
+
     environment {
         version = ''
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -17,13 +21,13 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/master']],
+                            branches: [[name: '*/practice']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-vprofile-credentials',
-                                url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
+                                credentialsId: 'github-creds',
+                                url: 'git@github.com:ravithejajs/vprofile-app-enterprise.git'
                             ]]
                             ]
                         )
@@ -36,8 +40,8 @@ pipeline {
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-vprofile-credentials',
-                                url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
+                                credentialsId: 'github-creds',
+                                url: 'git@github.com:ravithejajs/vprofile-app-enterprise.git'
                             ]]
                             ]
                         )
@@ -68,86 +72,24 @@ pipeline {
                 }
             }
         }
-
-        // stage('provision server') {
-        //     // environment {
-        //     //     // AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
-        //     //     // AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
-        //     //     // TF_VAR_env_prefix = 'test'
-        //     // }
-        //     steps {
-        //         script {
-        //             dir('terraform-scripts') {
-        //                 sh "terraform init"
-        //                 sh "terraform apply --auto-approve"
-        //                 // EC2_PUBLIC_IP = sh(
-        //                 //     script: "terraform output ec2_public_ip",
-        //                 //     returnStdout: true
-        //                 // ).trim()
-        //             }
-        //         }
-        //     }
-        // }
-
-        // stage("Upload Artifact s3") {
-        //     steps {
-        //         script {
-        //             sh "aws s3 cp target/vprofile-${version}.war s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war"
-        //         }
-        //     }
-        // }
-
-         stage('Copy') {
-            steps {
-                sh 'cp target/*.war Docker/app'
-            }
-        }
-        stage('Dockerize') {
-    steps {
-        script {
-            dir('Docker/app') {
-                        sh "docker build -t 851481789693.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version} . "
-                        sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 851481789693.dkr.ecr.ap-south-1.amazonaws.com'
-                        sh "docker push 851481789693.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version}"
-            }
-        }
-    }
-}
-
-stage('Create Deploy Bundle') {
+        stage("Upload Artifact s3") {
             steps {
                 script {
-                    dir('deploy-bundle') {
-                        sh "sed -i s/%version%/${version}/g ./*"
-                        sh 'zip -r ../deploy-bundle.zip ./*'
-                        sh "aws s3 cp ../deploy-bundle.zip s3://vprofile.bundle/deploy-bundle-${version}.zip"
-                    }
+                    sh "aws s3 cp target/vprofile-${version}.war s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war"
                 }
             }
         }
 
-        stage('Deploy to CodeDeploy') {
-        steps {
-            script {
-            def deploymentGroup
-            switch (params.DEPLOY_ENV) {
-                case 'QA':
-                deploymentGroup = 'vprofile-docker'
-                break
-                case 'Stage':
-                deploymentGroup = 'Vprofile-App-stage'
-                break
-                case 'Prod':
-                deploymentGroup = 'prod-deployment-group'
-                break
-                default:
-                error('Invalid environment selected')
-            }
-
-            sh "aws deploy create-deployment --application-name  vprofile-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile.bundle,key=deploy-bundle.zip,bundleType=zip"
-            }
+      stage('Deploy') {
+    steps {
+        sshagent(credentials: ['ec2-creds']) {
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'aws s3 cp s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war ~/'"
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'sudo mv ~/vprofile-${version}-${DEPLOY_ENV}.war /var/lib/tomcat9/webapps/'"
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'sudo systemctl restart tomcat9'"
         }
     }
-
 }
+
+
+   }
 }
