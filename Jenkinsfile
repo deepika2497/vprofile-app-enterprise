@@ -5,7 +5,7 @@ pipeline {
     }
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
-        string(name: 'S3_BUCKET', defaultValue: 'vprofile.', description: 'S3 bucket')
+        string(name: 'S3_BUCKET', defaultValue: 'vprofile', description: 'S3 bucket')
     }
     environment {
         version = ''
@@ -17,12 +17,12 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/develop']],
+                            branches: [[name: '*/jenkins-job']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-vprofile-credentials',
+                                credentialsId: 'github-creds',
                                 url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
@@ -36,7 +36,7 @@ pipeline {
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-vprofile-credentials',
+                                credentialsId: 'github-creds',
                                 url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
@@ -81,7 +81,7 @@ pipeline {
             def deploymentGroup
             switch (params.DEPLOY_ENV) {
                 case 'QA':
-                deploymentGroup = 'Vprofile-App-qa'
+                deploymentGroup = 'vprofile-qa'
                 break
                 case 'Stage':
                 deploymentGroup = 'Vprofile-App-stage'
@@ -93,7 +93,7 @@ pipeline {
                 error('Invalid environment selected')
             }
 
-            sh "aws deploy create-deployment --application-name  vprofile-deploy-application --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile.bundle,key=deploy-bundle.zip,bundleType=zip"
+            sh "aws deploy create-deployment --application-name  vprofile-qa-application --deployment-group-name ${deploymentGroup} --s3-location bucket=deploy-bundle,key=deploy-bundle.zip,bundleType=zip"
             }
         }
     }
