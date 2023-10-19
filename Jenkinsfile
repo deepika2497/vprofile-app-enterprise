@@ -22,7 +22,7 @@ pipeline {
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-vprofile-credentials',
+                                credentialsId: 'github-creds',
                                 url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
