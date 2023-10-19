@@ -1,6 +1,6 @@
 variable "region" {
   description = "AWS region"
-  default     = "ap-south-1"
+  default     = "eu-north-1"
 }
 
 variable "cidr_block" {
@@ -21,5 +21,5 @@ variable "private_subnet_cidr_blocks" {
 }
 variable "availability_zone" {
   type        = list(string)
-  default = ["ap-south-1a","ap-south-1b"]
+  default = ["eu-north-1a","eu-north-1b"]
 }
