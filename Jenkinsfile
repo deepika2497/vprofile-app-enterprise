@@ -3,17 +3,13 @@ pipeline {
     tools {
         maven 'maven3'
     }
-
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
-        string(name: 'S3_BUCKET', defaultValue: 'vprofile', description: 'S3 bucket')
-        string(name: 'EC2_IP', defaultValue: '3.110.159.232', description: 'EC2 Instance IP Address')
+        string(name: 'S3_BUCKET', defaultValue: 'vprofile.', description: 'S3 bucket')
     }
-
     environment {
         version = ''
     }
-
     stages {
         stage('Checkout') {
             steps {
@@ -21,13 +17,13 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/practice']],
+                            branches: [[name: '*/develop']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-creds',
-                                url: 'git@github.com:ravithejajs/vprofile-app-enterprise.git'
+                                credentialsId: 'github-vprofile-credentials',
+                                url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
                         )
@@ -35,13 +31,13 @@ pipeline {
                         // For Stage and Prod, switch to master branch
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/master']],
+                            branches: [[name: '*/terraform-git']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-creds',
-                                url: 'git@github.com:ravithejajs/vprofile-app-enterprise.git'
+                                credentialsId: 'github-vprofile-credentials',
+                                url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
                         )
@@ -72,6 +68,27 @@ pipeline {
                 }
             }
         }
+
+        stage('provision server') {
+            // environment {
+            //     // AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
+            //     // AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
+            //     // TF_VAR_env_prefix = 'test'
+            // }
+            steps {
+                script {
+                    dir('terraform-scripts') {
+                        sh "terraform init"
+                        sh "terraform apply --auto-approve"
+                        // EC2_PUBLIC_IP = sh(
+                        //     script: "terraform output ec2_public_ip",
+                        //     returnStdout: true
+                        // ).trim()
+                    }
+                }
+            }
+        }
+
         stage("Upload Artifact s3") {
             steps {
                 script {
@@ -79,17 +96,27 @@ pipeline {
                 }
             }
         }
+        stage('Deploy to CodeDeploy') {
+        steps {
+            script {
+            def deploymentGroup
+            switch (params.DEPLOY_ENV) {
+                case 'QA':
+                deploymentGroup = 'Vprofile-App-qa'
+                break
+                case 'Stage':
+                deploymentGroup = 'Vprofile-App-stage'
+                break
+                case 'Prod':
+                deploymentGroup = 'prod-deployment-group'
+                break
+                default:
+                error('Invalid environment selected')
+            }
 
-      stage('Deploy') {
-    steps {
-        sshagent(credentials: ['ec2-creds']) {
-            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'aws s3 cp s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war ~/'"
-            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'sudo mv ~/vprofile-${version}-${DEPLOY_ENV}.war /var/lib/tomcat9/webapps/'"
-            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'sudo systemctl restart tomcat9'"
+            sh "aws deploy create-deployment --application-name  vprofile-new-app --deployment-group-name ${deploymentGroup} --s3-location bucket=deepikanagu-bucket,key=deploy-bundle.zip,bundleType=zip"
+            }
         }
     }
-}
-
-
    }
 }
