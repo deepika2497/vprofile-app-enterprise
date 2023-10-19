@@ -1,11 +1,7 @@
-provider "aws" {
-  region = "eu-north-1"  # Set your desired AWS region here
-}
-
 resource "aws_s3_bucket" "v_app_prod_bucket" {
   bucket = "vprofileapp-bucket"
     
-  tags = {
+tags = {
     Name        = "v-app-prod-bucket"
     Environment = "Production"
   }
