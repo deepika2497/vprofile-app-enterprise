@@ -114,7 +114,7 @@ pipeline {
                 error('Invalid environment selected')
             }
 
-            sh "aws deploy create-deployment --application-name  vprofile-new-app --deployment-group-name ${deploymentGroup} --s3-location bucket=deepikanagu-bucket,key=deploy-bundle.zip,bundleType=zip"
+            sh "aws deploy create-deployment --application-name  vprofile-new-app --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofileapp-bucket,key=deploy-bundle.zip,bundleType=zip"
             }
         }
     }
