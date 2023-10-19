@@ -5,7 +5,7 @@ pipeline {
     }
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
-        string(name: 'S3_BUCKET', defaultValue: 'vprofile.', description: 'S3 bucket')
+        string(name: 'S3_BUCKET', defaultValue: 'vprofile', description: 'S3 bucket')
     }
     environment {
         version = ''
@@ -17,12 +17,12 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/develop']],
+                            branches: [[name: '*/terraform-git']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-vprofile-credentials',
+                                credentialsId: 'github-creds',
                                 url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
@@ -36,7 +36,7 @@ pipeline {
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
-                                credentialsId: 'github-vprofile-credentials',
+                                credentialsId: 'github-creds',
                                 url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
@@ -114,7 +114,7 @@ pipeline {
                 error('Invalid environment selected')
             }
 
-            sh "aws deploy create-deployment --application-name  vprofile-new-app --deployment-group-name ${deploymentGroup} --s3-location bucket=deepikanagu-bucket,key=deploy-bundle.zip,bundleType=zip"
+            sh "aws deploy create-deployment --application-name  vprofile-new-app --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofileapp-bucket,key=deploy-bundle.zip,bundleType=zip"
             }
         }
     }
