@@ -102,13 +102,13 @@ pipeline {
             def deploymentGroup
             switch (params.DEPLOY_ENV) {
                 case 'QA':
-                deploymentGroup = 'Vprofile-App-qa'
+                deploymentGroup = 'prod-deployment-group'
                 break
                 case 'Stage':
                 deploymentGroup = 'Vprofile-App-stage'
                 break
                 case 'Prod':
-                deploymentGroup = 'prod-deployment-group'
+                deploymentGroup = 'deployment-group'
                 break
                 default:
                 error('Invalid environment selected')
