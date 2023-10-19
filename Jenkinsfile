@@ -17,7 +17,7 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/develop']],
+                            branches: [[name: '*/terraform-practice']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
@@ -31,7 +31,7 @@ pipeline {
                         // For Stage and Prod, switch to master branch
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/terraform-git']],
+                            branches: [[name: '*/terraform-practice']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
