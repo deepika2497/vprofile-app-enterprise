@@ -5,7 +5,7 @@ pipeline {
     }
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
-        string(name: 'S3_BUCKET', defaultValue: 'vprofile.', description: 'S3 bucket')
+        string(name: 'S3_BUCKET', defaultValue: 'vprofile', description: 'S3 bucket')
     }
     environment {
         version = ''
