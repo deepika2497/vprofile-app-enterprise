@@ -32,6 +32,6 @@ resource "aws_launch_template" "vprofile" {
       Name = "VprofileApp_Prod"
     }
   }
-  image_id        =  "ami-0eeca1225b745d958"  # Replace with your desired AMI ID
-  instance_type   = "t2.micro"  # Replace with your desired instance type
+  image_id        =  "ami-085536f333a279f41"  # Replace with your desired AMI ID
+  instance_type   = "t3.micro"  # Replace with your desired instance type
 }
