@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-S3_BUCKET="vprofile-prod"
+S3_BUCKET="vprofileprod"
 ARTIFACT_PATH="target/vprofile-${version}.war"
 WEBAPPS_DIR="/var/lib/tomcat9/webapps"
 
