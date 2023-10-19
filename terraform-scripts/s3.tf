@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "v_app_prod_bucket" {
-  bucket = "deepikanagu-bucket"
+  bucket = "vprofileapp-bucket"
     
 tags = {
     Name        = "v-app-prod-bucket"
