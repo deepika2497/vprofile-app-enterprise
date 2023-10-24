@@ -4,7 +4,7 @@ pipeline {
         maven 'maven3'
     }
     parameters {
-        choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
+        choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prodt'], description: 'Deployment environment')
         string(name: 'S3_BUCKET', defaultValue: 'vprofile-', description: 'S3 bucket')
     }
     environment {
@@ -23,7 +23,7 @@ pipeline {
                             submoduleCfg: [],
                             userRemoteConfigs: [[
                                 credentialsId: 'github-creds',
-                                url: 'https://github.com/ravithejajs/vprofile-app-enterprise.git'
+                                url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
                         )
@@ -31,13 +31,13 @@ pipeline {
                         // For Stage and Prod, switch to master branch
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/terraform-scripts']],
+                            branches: [[name: '*/master']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
                                 credentialsId: 'github-creds',
-                                url: 'https://github.com/ravithejajs/vprofile-app-enterprise.git'
+                                url: 'git@github.com:deepika2497/vprofile-app-enterprise.git'
                             ]]
                             ]
                         )
@@ -104,9 +104,9 @@ pipeline {
             steps {
                 script {
                     dir('Docker-files/app') {
-                        sh "docker build -t 484472757370.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version} . "
-                        sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 484472757370.dkr.ecr.ap-south-1.amazonaws.com'
-                        sh "docker push 484472757370.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version}"
+                        sh "docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile-qa:vprofileapp-${version} . "
+                        sh 'aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 278607931101.dkr.ecr.eu-north-1.amazonaws.com'
+                        sh "docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile-qa:vprofileapp-${version}"
                     }
                 }
             }
@@ -117,7 +117,7 @@ pipeline {
                     dir('deploy-bundle') {
                         sh "sed -i s/%version%/${version}/g ./*"
                         sh 'zip -r ../deploy-bundle.zip ./*'
-                        sh "aws s3 cp ../deploy-bundle.zip s3://vprofile123-bundle/deploy-bundle-${version}.zip"
+                        sh "aws s3 cp ../deploy-bundle.zip s3://vprofileqa/deploy-bundle-${version}.zip"
                     }
                 }
             }
@@ -134,14 +134,14 @@ pipeline {
                 case 'Stage':
                 deploymentGroup = 'Vprofile-App-stage'
                 break
-                case 'Prod':
-                deploymentGroup = 'Vprofile-App-production'
+                case 'Prodt':
+                deploymentGroup = 'vprofile-docker'
                 break
                 default:
                 error('Invalid environment selected')
             }
 
-            sh "aws deploy create-deployment --application-name  Vprofile-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile123-bundle,key=deploy-bundle-${version}.zip,bundleType=zip"
+            sh "aws deploy create-deployment --application-name  vprofile-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofileqa,key=deploy-bundle-${version}.zip,bundleType=zip"
             }
         }
     }
