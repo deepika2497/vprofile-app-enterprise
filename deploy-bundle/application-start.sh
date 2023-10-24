@@ -31,4 +31,4 @@
 # fi
 #!/bin/bash
 
-docker run -d  --name vprofile_app -p 8080:8080 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile-qa:vprofileapp-%version%
+docker run -d  --name vprofile_app -p 8080:8080 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:vprofileapp-%version%
