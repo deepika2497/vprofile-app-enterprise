@@ -3,17 +3,13 @@ pipeline {
     tools {
         maven 'maven3'
     }
-
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prod'], description: 'Deployment environment')
-        string(name: 'S3_BUCKET', defaultValue: 'vprofile', description: 'S3 bucket')
-        string(name: 'EC2_IP', defaultValue: '3.110.159.232', description: 'EC2 Instance IP Address')
+        string(name: 'S3_BUCKET', defaultValue: 'vprofile-', description: 'S3 bucket')
     }
-
     environment {
         version = ''
     }
-
     stages {
         stage('Checkout') {
             steps {
@@ -21,13 +17,13 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/practice']],
+                            branches: [[name: '*/docker']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
                                 credentialsId: 'github-creds',
-                                url: 'git@github.com:ravithejajs/vprofile-app-enterprise.git'
+                                url: 'https://github.com/ravithejajs/vprofile-app-enterprise.git'
                             ]]
                             ]
                         )
@@ -35,13 +31,13 @@ pipeline {
                         // For Stage and Prod, switch to master branch
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/master']],
+                            branches: [[name: '*/terraform-scripts']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
                             userRemoteConfigs: [[
                                 credentialsId: 'github-creds',
-                                url: 'git@github.com:ravithejajs/vprofile-app-enterprise.git'
+                                url: 'https://github.com/ravithejajs/vprofile-app-enterprise.git'
                             ]]
                             ]
                         )
@@ -72,24 +68,82 @@ pipeline {
                 }
             }
         }
-        stage("Upload Artifact s3") {
+        // stage('provision server') {
+        //     // environment {
+        //     //     // AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
+        //     //     // AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
+        //     //     // TF_VAR_env_prefix = 'test'
+        //     // }
+        //     steps {
+        //         script {
+        //             dir('terraform-scripts') {
+        //                 sh "terraform init"
+        //                 sh "terraform apply --auto-approve"
+        //                 // EC2_PUBLIC_IP = sh(
+        //                 //     script: "terraform output ec2_public_ip",
+        //                 //     returnStdout: true
+        //                 // ).trim()
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage("Upload Artifact s3") {
+        //     steps {
+        //         script {
+        //             sh "aws s3 cp target/vprofile-${version}.war s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war"
+        //         }
+        //     }
+        // }
+        stage('Copy') {
+            steps {
+                sh 'cp target/*.war Docker-files/app/'
+            }
+        }
+        stage('Dockerize') {
             steps {
                 script {
-                    sh "aws s3 cp target/vprofile-${version}.war s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war"
+                    dir('Docker-files/app') {
+                        sh "docker build -t 484472757370.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version} . "
+                        sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 484472757370.dkr.ecr.ap-south-1.amazonaws.com'
+                        sh "docker push 484472757370.dkr.ecr.ap-south-1.amazonaws.com/vprofile-qa:vprofileapp-${version}"
+                    }
+                }
+            }
+        }
+         stage('Create Deploy Bundle') {
+            steps {
+                script {
+                    dir('deploy-bundle') {
+                        sh "sed -i s/%version%/${version}/g ./*"
+                        sh 'zip -r ../deploy-bundle.zip ./*'
+                        sh "aws s3 cp ../deploy-bundle.zip s3://vprofile123-bundle/deploy-bundle-${version}.zip"
+                    }
                 }
             }
         }
 
-      stage('Deploy') {
-    steps {
-        sshagent(credentials: ['ec2-creds']) {
-            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'aws s3 cp s3://${S3_BUCKET}/vprofile-${version}-${DEPLOY_ENV}.war ~/'"
-            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'sudo mv ~/vprofile-${version}-${DEPLOY_ENV}.war /var/lib/tomcat9/webapps/'"
-            sh "ssh -o StrictHostKeyChecking=no ubuntu@16.170.159.176 'sudo systemctl restart tomcat9'"
+        stage('Deploy to CodeDeploy') {
+        steps {
+            script {
+            def deploymentGroup
+            switch (params.DEPLOY_ENV) {
+                case 'QA':
+                deploymentGroup = 'vprofile-docker-prod'
+                break
+                case 'Stage':
+                deploymentGroup = 'Vprofile-App-stage'
+                break
+                case 'Prod':
+                deploymentGroup = 'Vprofile-App-production'
+                break
+                default:
+                error('Invalid environment selected')
+            }
+
+            sh "aws deploy create-deployment --application-name  Vprofile-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofile123-bundle,key=deploy-bundle-${version}.zip,bundleType=zip"
+            }
         }
     }
-}
-
-
    }
 }
