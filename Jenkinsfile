@@ -97,7 +97,7 @@ pipeline {
         // }
         stage('Copy') {
             steps {
-                sh 'cp target/*.war Docker-files/app/'
+                sh 'cp target/*.war Docker/app/'
             }
         }
         stage('Dockerize') {
