@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: vprofile-app
-          image: 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:latest
+          image: 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:%version%
           ports:
             - containerPort: 8080
       imagePullSecrets:
