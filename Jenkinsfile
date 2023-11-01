@@ -5,7 +5,6 @@ pipeline {
     }
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prodt'], description: 'Deployment environment')
-        string(name: 'S3_BUCKET', defaultValue: 'vprofile-', description: 'S3 bucket')
     }
     environment {
         version = ''
@@ -17,7 +16,7 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/docker']],
+                            branches: [[name: '*/kubernetes']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
@@ -31,7 +30,7 @@ pipeline {
                         // For Stage and Prod, switch to master branch
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/master']],
+                            branches: [[name: '*/kubernetes']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
@@ -107,41 +106,43 @@ pipeline {
                         sh "docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version} . "
                         sh 'aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 278607931101.dkr.ecr.eu-north-1.amazonaws.com'
                         sh "docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version}"
+                        sh "sed -i s/%version%/${version}/g /var/lib/jenkins/workspace/vprofile-enterprise/eks-files/vapp/deployment.yaml"
                     }
                 }
             }
         }
-         stage('Create Deploy Bundle') {
-            steps {
-                script {
-                    dir('deploy-bundle') {
-                        sh "sed -i s/%version%/${version}/g ./*"
-                        sh 'zip -r ../deploy-bundle.zip ./*'
-                        sh "aws s3 cp ../deploy-bundle.zip s3://vprofileqa/deploy-bundle-${version}.zip"
-                    }
-                }
-            }
-        }
+        // stage('Create Deploy Bundle') {
+          //  steps {
+               // script {
+                    //dir('deploy-bundle') {
+                     //   sh "sed -i s/%version%/${version}/g ./*"
+                       // sh 'zip -r ../deploy-bundle.zip ./*'
+                      //  sh "aws s3 cp ../deploy-bundle.zip s3://vprofileqa/deploy-bundle-${version}.zip"
+                 //   }
+               // }
+          //  }
+       // }
 
-        stage('Deploy to CodeDeploy') {
+        stage('Deploy to Eks') {
         steps {
             script {
-            def deploymentGroup
+            def namespace
             switch (params.DEPLOY_ENV) {
                 case 'QA':
-                deploymentGroup = 'vprofile-docker-prod'
+                deploymentGroup = 'vprofile-eks-qa'
                 break
                 case 'Stage':
-                deploymentGroup = 'Vprofile-App-stage'
+                deploymentGroup = 'Vprofile-eks-stage'
                 break
                 case 'Prodt':
-                deploymentGroup = 'vprofile-docker'
+                deploymentGroup = 'vprofile-eks-prodt'
                 break
                 default:
                 error('Invalid environment selected')
             }
 
-            sh "aws deploy create-deployment --application-name  vprofile-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofileqa,key=deploy-bundle-${version}.zip,bundleType=zip"
+            sh "kubectl apply -f ./eks-files/vapp/ -n ${namespace}"
+                sh "kubectl apply -f ./eks-files/vdb/ -n ${namespace}"
             }
         }
     }
