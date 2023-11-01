@@ -106,7 +106,7 @@ pipeline {
                         sh "docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version} . "
                         sh 'aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 278607931101.dkr.ecr.eu-north-1.amazonaws.com'
                         sh "docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version}"
-                        sh "sed -i s/%version%/${version}/g /var/lib/jenkins/workspace/vprofile-enterprise/eks-files/vapp/deployment.yaml"
+                        sh "sed -i s/%version%/${version}/g /var/lib/jenkins/workspace/staging/eks-files/vapp/deployment.yaml"
                     }
                 }
             }
