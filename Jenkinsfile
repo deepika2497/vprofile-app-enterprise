@@ -123,27 +123,29 @@ pipeline {
           //  }
        // }
 
-        stage('Deploy to Eks') {
-        steps {
-            script {
+       stage('Deploy to Eks') {
+    steps {
+        script {
             def namespace
             switch (params.DEPLOY_ENV) {
                 case 'QA':
-                deploymentGroup = 'vprofile-eks-qa'
-                break
+                    namespace = 'vprofile-eks-qa'
+                    break
                 case 'Stage':
-                deploymentGroup = 'Vprofile-eks-stage'
-                break
+                    namespace = 'Vprofile-eks-stage'
+                    break
                 case 'Prodt':
-                deploymentGroup = 'vprofile-eks-prodt'
-                break
+                    namespace = 'vprofile-eks-prodt'
+                    break
                 default:
-                error('Invalid environment selected')
+                    error('Invalid environment selected')
             }
 
-           sh "kubectl apply -f ./eks-files/vapp/ -n ${namespace}"
-            }
+            sh "kubectl apply -f ./eks-files/vapp/ -n ${namespace}"
         }
     }
+}
+
+            
    }
 }
