@@ -1,0 +1,50 @@
+---
+- name: Build Artifact
+  hosts: localhost
+  gather_facts: no
+  vars:
+    version: ""
+    DEPLOY_ENV: ""
+  tasks:
+    - name: Build with Maven and tests
+      command: mvn clean package 
+
+    - name: Copy artifact to Docker folder
+      command: cp target/vprofile-1.0.5.war Docker/app/
+
+
+    - name: Build Docker image
+      command: docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:vprofileapp-{{ version }} .
+      args:
+        chdir: Docker/app
+
+    - name: Get ECR login password
+      shell: aws ecr get-login-password --region eu-north-1
+      register: ecr_login
+
+    - name: Docker login to ECR
+      docker_login:
+        registry_url: 278607931101.dkr.ecr.eu-north-1.amazonaws.com
+        username: AWS
+        password: "{{ ecr_login.stdout }}"
+
+    - name: Push Docker image to ECR
+      command: docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:vprofileapp-{{ version }}
+
+    - name: Update deployment.yaml
+      replace:
+        path: "eks-files/vapp/deployment.yaml"
+        regexp: '%version%'
+        replace: '{{ version }}'
+
+    - name: Set namespace based on DEPLOY_ENV
+      set_fact:
+        namespace: "{{ {'QA': 'vprofile-eks-qa', 'Stage': 'vprofile-eks-stage', 'Prod': 'vprofile-eks-prod'}[DEPLOY_ENV] }}"
+      when: DEPLOY_ENV in ['QA', 'Stage', 'Prod']
+
+    - name: Apply vapp and vdb manifests
+      command: kubectl apply -f eks-files/{{ item }}/ -n {{ namespace }}
+      with_items:
+        - vapp
+        - vdb
+      when: namespace is defined
