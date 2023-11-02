@@ -57,7 +57,7 @@ pipeline {
          stage("Ansible Vprofile-deploy") {
             steps {
                 script {
-                    sh "ansible-playbook vprofile-deploy.yaml -e version=${version} -e DEPLOY_ENV=${DEPLOY_ENV}"
+                    sh "ansible-playbook vprofile-deplo.yaml -e version=${version} -e DEPLOY_ENV=${DEPLOY_ENV}"
                 }
             }   
         }
@@ -103,7 +103,6 @@ pipeline {
         //         }
         //     }
         // }
-<<<<<<< HEAD
     //     stage('Copy') {
     //         steps {
     //             sh 'cp target/*.war Docker/app/'
@@ -154,24 +153,24 @@ pipeline {
     //         }
     //     }
     // }
-=======
-        stage('Copy') {
-            steps {
-                sh 'cp target/*.war Docker/app/'
-            }
-        }
-        stage('Dockerize') {
-            steps {
-                script {
-                    dir('Docker/app') {
-                        sh "docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version} . "
-                        sh 'aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 278607931101.dkr.ecr.eu-north-1.amazonaws.com'
-                        sh "docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version}"
-                        sh "sed -i s/%version%/${version}/g /var/lib/jenkins/workspace/staging/eks-files/vapp/deployment.yaml"
-                    }
-                }
-            }
-        }
+// =======
+       // stage('Copy') {
+        //    steps {
+         //       sh 'cp target/*.war Docker/app/'
+        //    }
+      //  }
+       // stage('Dockerize') {
+         //   steps {
+            //    script {
+                 //   dir('Docker/app') {
+                   //     sh "docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version} . "
+                    //    sh 'aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 278607931101.dkr.ecr.eu-north-1.amazonaws.com'
+                    //    sh "docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version}"
+                     //   sh "sed -i s/%version%/${version}/g /var/lib/jenkins/workspace/staging/eks-files/vapp/deployment.yaml"
+                  //  }
+            //    }
+          //  }
+       // }
         // stage('Create Deploy Bundle') {
           //  steps {
                // script {
@@ -184,31 +183,31 @@ pipeline {
           //  }
        // }
 
-       stage('Deploy to Eks') {
-    steps {
-        script {
-            def namespace
-            switch (params.DEPLOY_ENV) {
-                case 'QA':
-                    namespace = 'vprofile-eks-qa'
-                    break
-                case 'Stage':
-                    namespace = 'Vprofile-eks-stage'
-                    break
-                case 'Prodt':
-                    namespace = 'vprofile-eks-prodt'
-                    break
-                default:
-                    error('Invalid environment selected')
-            }
-
+  //     stage('Deploy to Eks') {
+  //  steps {
+    //    script {
+        //    def namespace
+         //   switch (params.DEPLOY_ENV) {
+          //      case 'QA':
+                //    namespace = 'vprofile-eks-qa'
+                 //   break
+              //  case 'Stage':
+              //      namespace = 'Vprofile-eks-stage'
+               //     break
+              //  case 'Prodt':
+                //    namespace = 'vprofile-eks-prodt'
+                 //   break
+              //  default:
+                 //   error('Invalid environment selected')
+          //  }
+//
             sh "kubectl apply -f ./eks-files/vapp/ -n ${namespace}"
            
-        }
-    }
-}
+      //  }
+   // }
+//}
 
             
->>>>>>> 3384c199a86c484d28fd8da0f4decb5576ce611a
+//>>>>>>> 3384c199a86c484d28fd8da0f4decb5576ce611a
    }
 }
