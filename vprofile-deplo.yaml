@@ -40,7 +40,7 @@
     - name: Set namespace based on DEPLOY_ENV
       set_fact:
         namespace: "{{ {'QA': 'vprofile-eks-qa', 'Stage': 'vprofile-eks-stage', 'Prod': 'vprofile-eks-prodt'}[DEPLOY_ENV] }}"
-      when: DEPLOY_ENV in ['QA', 'Stage', 'Prod']
+      when: DEPLOY_ENV in ['QA', 'Stage', 'Prodt']
 
     - name: Apply vapp and vdb manifests
       command: kubectl apply -f eks-files/{{ item }}/ -n {{ namespace }}
