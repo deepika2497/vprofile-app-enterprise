@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: vprofile-db
-          image: 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile-db:latest
+          image: 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile-db:%version%
           ports:
             - containerPort: 3306
       imagePullSecrets:
