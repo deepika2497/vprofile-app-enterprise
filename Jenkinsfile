@@ -201,7 +201,7 @@ pipeline {
                  //   error('Invalid environment selected')
           //  }
 //
-            sh "kubectl apply -f ./eks-files/vapp/ -n ${namespace}"
+           // sh "kubectl apply -f ./eks-files/vapp/ -n ${namespace}"
            
       //  }
    // }
