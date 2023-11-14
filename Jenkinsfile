@@ -5,7 +5,6 @@ pipeline {
     }
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['QA', 'Stage', 'Prodt'], description: 'Deployment environment')
-        string(name: 'S3_BUCKET', defaultValue: 'vprofile-', description: 'S3 bucket')
     }
     environment {
         version = ''
@@ -17,7 +16,7 @@ pipeline {
                     if (params.DEPLOY_ENV == 'QA') {
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/docker']],
+                            branches: [[name: '*/kubernetes']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
@@ -31,7 +30,7 @@ pipeline {
                         // For Stage and Prod, switch to master branch
                         checkout(
                             [$class: 'GitSCM',
-                            branches: [[name: '*/master']],
+                            branches: [[name: '*/kubernetes']],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [],
                             submoduleCfg: [],
@@ -54,20 +53,29 @@ pipeline {
                 }
             }
         }
-        stage("Build Artifact") {
+
+         stage("Ansible Vprofile-deploy") {
             steps {
                 script {
-                    sh 'mvn clean package -DskipTests'
+                    sh "ansible-playbook vprofile-deplo.yaml -e version=${version} -e DEPLOY_ENV=${DEPLOY_ENV}"
                 }
-            }
+            }   
         }
-        stage("Test") {
-            steps {
-                script {
-                    sh 'mvn test'
-                }
-            }
-        }
+        
+        // stage("Build Artifact") {
+        //     steps {
+        //         script {
+        //             sh 'mvn clean package -DskipTests'
+        //         }
+        //     }
+        // }
+        // stage("Test") {
+        //     steps {
+        //         script {
+        //             sh 'mvn test'
+        //         }
+        //     }
+        // }
         // stage('provision server') {
         //     // environment {
         //     //     // AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
@@ -95,55 +103,111 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Copy') {
-            steps {
-                sh 'cp target/*.war Docker/app/'
-            }
-        }
-        stage('Dockerize') {
-            steps {
-                script {
-                    dir('Docker/app') {
-                        sh "docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version} . "
-                        sh 'aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 278607931101.dkr.ecr.eu-north-1.amazonaws.com'
-                        sh "docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version}"
-                    }
-                }
-            }
-        }
-         stage('Create Deploy Bundle') {
-            steps {
-                script {
-                    dir('deploy-bundle') {
-                        sh "sed -i s/%version%/${version}/g ./*"
-                        sh 'zip -r ../deploy-bundle.zip ./*'
-                        sh "aws s3 cp ../deploy-bundle.zip s3://vprofileqa/deploy-bundle-${version}.zip"
-                    }
-                }
-            }
-        }
+    //     stage('Copy') {
+    //         steps {
+    //             sh 'cp target/*.war Docker/app/'
+    //         }
+    //     }
+    //     stage('Dockerize') {
+    //         steps {
+    //             script {
+    //                 dir('Docker/app') {
+    //                     sh "docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version} . "
+    //                     sh 'aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 278607931101.dkr.ecr.eu-north-1.amazonaws.com'
+    //                     sh "docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version}"
+    //                 }
+    //             }
+    //         }
+    //     }
+    //      stage('Create Deploy Bundle') {
+    //         steps {
+    //             script {
+    //                 dir('deploy-bundle') {
+    //                     sh "sed -i s/%version%/${version}/g ./*"
+    //                     sh 'zip -r ../deploy-bundle.zip ./*'
+    //                     sh "aws s3 cp ../deploy-bundle.zip s3://vprofileqa/deploy-bundle-${version}.zip"
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        stage('Deploy to CodeDeploy') {
-        steps {
-            script {
-            def deploymentGroup
-            switch (params.DEPLOY_ENV) {
-                case 'QA':
-                deploymentGroup = 'vprofile-docker-prod'
-                break
-                case 'Stage':
-                deploymentGroup = 'Vprofile-App-stage'
-                break
-                case 'Prodt':
-                deploymentGroup = 'vprofile-docker'
-                break
-                default:
-                error('Invalid environment selected')
-            }
+    //     stage('Deploy to CodeDeploy') {
+    //     steps {
+    //         script {
+    //         def deploymentGroup
+    //         switch (params.DEPLOY_ENV) {
+    //             case 'QA':
+    //             deploymentGroup = 'vprofile-docker-prod'
+    //             break
+    //             case 'Stage':
+    //             deploymentGroup = 'Vprofile-App-stage'
+    //             break
+    //             case 'Prodt':
+    //             deploymentGroup = 'vprofile-docker'
+    //             break
+    //             default:
+    //             error('Invalid environment selected')
+    //         }
 
-            sh "aws deploy create-deployment --application-name  vprofile-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofileqa,key=deploy-bundle-${version}.zip,bundleType=zip"
-            }
-        }
-    }
+    //         sh "aws deploy create-deployment --application-name  vprofile-docker --deployment-group-name ${deploymentGroup} --s3-location bucket=vprofileqa,key=deploy-bundle-${version}.zip,bundleType=zip"
+    //         }
+    //     }
+    // }
+// =======
+       // stage('Copy') {
+        //    steps {
+         //       sh 'cp target/*.war Docker/app/'
+        //    }
+      //  }
+       // stage('Dockerize') {
+         //   steps {
+            //    script {
+                 //   dir('Docker/app') {
+                   //     sh "docker build -t 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version} . "
+                    //    sh 'aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 278607931101.dkr.ecr.eu-north-1.amazonaws.com'
+                    //    sh "docker push 278607931101.dkr.ecr.eu-north-1.amazonaws.com/vprofile:${version}"
+                     //   sh "sed -i s/%version%/${version}/g /var/lib/jenkins/workspace/staging/eks-files/vapp/deployment.yaml"
+                  //  }
+            //    }
+          //  }
+       // }
+        // stage('Create Deploy Bundle') {
+          //  steps {
+               // script {
+                    //dir('deploy-bundle') {
+                     //   sh "sed -i s/%version%/${version}/g ./*"
+                       // sh 'zip -r ../deploy-bundle.zip ./*'
+                      //  sh "aws s3 cp ../deploy-bundle.zip s3://vprofileqa/deploy-bundle-${version}.zip"
+                 //   }
+               // }
+          //  }
+       // }
+
+  //     stage('Deploy to Eks') {
+  //  steps {
+    //    script {
+        //    def namespace
+         //   switch (params.DEPLOY_ENV) {
+          //      case 'QA':
+                //    namespace = 'vprofile-eks-qa'
+                 //   break
+              //  case 'Stage':
+              //      namespace = 'Vprofile-eks-stage'
+               //     break
+              //  case 'Prodt':
+                //    namespace = 'vprofile-eks-prodt'
+                 //   break
+              //  default:
+                 //   error('Invalid environment selected')
+          //  }
+//
+           // sh "kubectl apply -f ./eks-files/vapp/ -n ${namespace}"
+           
+      //  }
+   // }
+//}
+
+            
+//>>>>>>> 3384c199a86c484d28fd8da0f4decb5576ce611a
    }
 }
